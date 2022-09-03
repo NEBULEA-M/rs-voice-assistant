@@ -1,11 +1,10 @@
-use std::{env, process, sync::{Arc, Mutex}, time::Duration};
+use std::{sync::{Arc, Mutex}, time::Duration};
 
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     ChannelCount, SampleFormat,
 };
 use dasp::{sample::ToSample, Sample};
-use serde_json::to_string;
 
 use july::{DecodingState, Model, Recognizer, SpeakerModel};
 
@@ -18,24 +17,21 @@ fn main() {
     let record_duration = Duration::from_secs(50);
     let idle_duration = Duration::from_secs(10);
 
-    let audio_input_device = cpal::default_host()
+    let audio_host = cpal::default_host();
+    let audio_input_device = audio_host
         .default_input_device()
         .expect("No input device connected");
-
-    let config = audio_input_device
+    let audio_input_config = audio_input_device
         .default_input_config()
         .expect("Failed to load default input config");
-    let channels = config.channels();
+    let channels = audio_input_config.channels();
 
     let model = Model::new(model_path).expect("Could not create the model");
     let spk_model = SpeakerModel::new(speaker_model_path).expect("Could not create the speaker model");
 
     let mut recognizer =
-        Recognizer::new_with_speaker(&model, config.sample_rate().0 as f32, &spk_model)
+        Recognizer::new_with_speaker(&model, audio_input_config.sample_rate().0 as f32, &spk_model)
         .expect("Could not create the Recognizer");
-
-    // recognizer.set_words(true);
-    // recognizer.set_partial_words(true);
 
     let recognizer = Arc::new(Mutex::new(recognizer));
 
@@ -44,44 +40,47 @@ fn main() {
     };
 
     let recognizer_clone = recognizer.clone();
-    let stream = match config.sample_format() {
+    let in_stream = match audio_input_config.sample_format() {
         SampleFormat::F32 => audio_input_device.build_input_stream(
-            &config.into(),
+            &audio_input_config.into(),
             move |data: &[f32], _| recognize(&mut recognizer_clone.lock().unwrap(), data, channels),
             err_fn,
         ),
         SampleFormat::U16 => audio_input_device.build_input_stream(
-            &config.into(),
+            &audio_input_config.into(),
             move |data: &[u16], _| recognize(&mut recognizer_clone.lock().unwrap(), data, channels),
             err_fn,
         ),
         SampleFormat::I16 => audio_input_device.build_input_stream(
-            &config.into(),
+            &audio_input_config.into(),
             move |data: &[i16], _| recognize(&mut recognizer_clone.lock().unwrap(), data, channels),
             err_fn,
         ),
     }
-        .expect("Could not build stream");
+        .expect("Could not build input stream");
 
-    stream.play().expect("Could not play stream");
+    in_stream.play().expect("Could not play input stream");
     println!("July is on...");
+
+
 
     loop {
         unsafe {
             if IS_EXIT {
                 println!("July is turn off");
-                drop(stream);
+                drop(in_stream);
                 break;
             } else {
                 std::thread::sleep(record_duration);
-                stream.pause().unwrap();
+                in_stream.pause().unwrap();
                 println!("July is pause");
                 std::thread::sleep(idle_duration);
-                stream.play().expect("Could not play stream");
+                in_stream.play().expect("Could not play stream");
                 println!("July is on again...");
             }
         }
     }
+    Ok(())
 }
 
 fn recognize<T: Sample + ToSample<i16>>(
@@ -103,7 +102,7 @@ fn recognize<T: Sample + ToSample<i16>>(
         }
         DecodingState::Finalized => {
             // println!("result: {:#?}", recognizer.final_result().single().unwrap().text);
-            processing((recognizer.final_result().single().unwrap().text).parse().unwrap());
+            process_message((recognizer.final_result().single().unwrap().text).parse().unwrap());
         }
         DecodingState::Failed => println!("error"),
     }
@@ -119,7 +118,7 @@ pub fn stereo_to_mono(input_data: &[i16]) -> Vec<i16> {
     result
 }
 
-fn processing(message: String) {
+fn process_message(message: String) {
     println!("{}", message);
     if message.contains("take a rest july") {
         unsafe { IS_EXIT = true; }
