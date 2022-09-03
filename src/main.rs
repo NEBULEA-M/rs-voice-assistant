@@ -9,12 +9,17 @@ use cpal::{
     ChannelCount, SampleFormat,
 };
 use dasp::{sample::ToSample, Sample};
+use serde_json::to_string;
 
 use july::{DecodingState, Model, Recognizer};
 
-fn main() {
+static  mut IS_EXIT: bool = false;
 
+fn main() {
     let model_path = "./model";
+
+    let record_duration = Duration::from_secs(20);
+    let rest_duration = Duration::from_secs(10);
 
     let audio_input_device = cpal::default_host()
         .default_input_device()
@@ -29,9 +34,8 @@ fn main() {
     let mut recognizer = Recognizer::new(&model, config.sample_rate().0 as f32)
         .expect("Could not create the Recognizer");
 
-    recognizer.set_max_alternatives(10);
-    recognizer.set_words(true);
-    recognizer.set_partial_words(true);
+    // recognizer.set_words(true);
+    // recognizer.set_partial_words(true);
 
     let recognizer = Arc::new(Mutex::new(recognizer));
 
@@ -60,17 +64,30 @@ fn main() {
         .expect("Could not build stream");
 
     stream.play().expect("Could not play stream");
-    println!("Recording...");
+    println!("July is on...");
+
+    while true {    // use while instead of loop to work with this situation, don't know why
+
+        unsafe {
+            if IS_EXIT {
+                break;
+            }
+        }
+        std::thread::sleep(record_duration);
+        stream.pause().unwrap();
+        println!("July is pause");
+        std::thread::sleep(rest_duration);
+        stream.play().expect("Could not play stream");
+        println!("July is on again...");
+    }
 
     drop(stream);
-
-    println!("{:#?}", recognizer.lock().unwrap().final_result());
 }
 
 fn recognize<T: Sample + ToSample<i16>>(
     recognizer: &mut Recognizer,
     data: &[T],
-    channels: ChannelCount,
+    channels: ChannelCount
 ) {
     let data: Vec<i16> = data.iter().map(|v| v.to_sample()).collect();
     let data = if channels != 1 {
@@ -82,13 +99,14 @@ fn recognize<T: Sample + ToSample<i16>>(
     let state = recognizer.accept_waveform(&data);
     match state {
         DecodingState::Running => {
-            println!("partial: {:#?}", recognizer.partial_result());
+            // println!("partial: {:#?}", recognizer.partial_result());
         }
         DecodingState::Finalized => {
-            // Result will always be multiple because we called set_max_alternatives
-            println!("result: {:#?}", recognizer.result().multiple().unwrap());
+            // println!("result: {:#?}", recognizer.final_result().single().unwrap().text);
+            processing((recognizer.final_result().single().unwrap().text).parse().unwrap());
+
         }
-        DecodingState::Failed => eprintln!("error"),
+        DecodingState::Failed => println!("error"),
     }
 }
 
@@ -99,6 +117,12 @@ pub fn stereo_to_mono(input_data: &[i16]) -> Vec<i16> {
             .chunks_exact(2)
             .map(|chunk| chunk[0] / 2 + chunk[1] / 2),
     );
-
     result
+}
+
+fn processing(message: String) {
+    println!("{}", message);
+    if message.contains("take a rest july") {
+        unsafe { IS_EXIT = true; }
+    }
 }
