@@ -5,12 +5,17 @@ use cpal::{
     ChannelCount, SampleFormat,
 };
 use dasp::{sample::ToSample, Sample};
+use tts::*;
 
 use july::{DecodingState, Model, Recognizer, SpeakerModel};
 
 static mut IS_EXIT: bool = false;
 
-fn main() {
+fn main() -> Result<(), Error> {
+    let mut tts = Tts::default()?;
+
+    write_to_speak(&mut tts, Box::from("hello sir, july is on")).unwrap();
+
     let model_path = "./model";
     let speaker_model_path = "./speaker-model";
 
@@ -62,12 +67,12 @@ fn main() {
     in_stream.play().expect("Could not play input stream");
     println!("July is on...");
 
-
-
     loop {
         unsafe {
             if IS_EXIT {
+                write_to_speak(&mut tts, Box::from("got it, goodbye sir")).unwrap();
                 println!("July is turn off");
+                drop(tts);
                 drop(in_stream);
                 break;
             } else {
@@ -123,4 +128,9 @@ fn process_message(message: String) {
     if message.contains("take a rest july") {
         unsafe { IS_EXIT = true; }
     }
+}
+
+fn write_to_speak(tts: &mut Tts, text: Box<str>) -> Result<(), Error> {
+    let _ = &tts.speak(text, false)?;
+    Ok(())
 }
