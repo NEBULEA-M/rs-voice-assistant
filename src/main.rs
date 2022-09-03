@@ -7,12 +7,13 @@ use cpal::{
 use dasp::{sample::ToSample, Sample};
 use serde_json::to_string;
 
-use july::{DecodingState, Model, Recognizer};
+use july::{DecodingState, Model, Recognizer, SpeakerModel};
 
 static mut IS_EXIT: bool = false;
 
 fn main() {
     let model_path = "./model";
+    let speaker_model_path = "./speaker-model";
 
     let record_duration = Duration::from_secs(50);
     let idle_duration = Duration::from_secs(10);
@@ -27,7 +28,10 @@ fn main() {
     let channels = config.channels();
 
     let model = Model::new(model_path).expect("Could not create the model");
-    let mut recognizer = Recognizer::new(&model, config.sample_rate().0 as f32)
+    let spk_model = SpeakerModel::new(speaker_model_path).expect("Could not create the speaker model");
+
+    let mut recognizer =
+        Recognizer::new_with_speaker(&model, config.sample_rate().0 as f32, &spk_model)
         .expect("Could not create the Recognizer");
 
     // recognizer.set_words(true);
