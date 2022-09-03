@@ -1,8 +1,4 @@
-use std::{
-    env,
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{env, process, sync::{Arc, Mutex}, time::Duration};
 
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -13,13 +9,13 @@ use serde_json::to_string;
 
 use july::{DecodingState, Model, Recognizer};
 
-static  mut IS_EXIT: bool = false;
+static mut IS_EXIT: bool = false;
 
 fn main() {
     let model_path = "./model";
 
-    let record_duration = Duration::from_secs(20);
-    let rest_duration = Duration::from_secs(10);
+    let record_duration = Duration::from_secs(50);
+    let idle_duration = Duration::from_secs(10);
 
     let audio_input_device = cpal::default_host()
         .default_input_device()
@@ -66,22 +62,22 @@ fn main() {
     stream.play().expect("Could not play stream");
     println!("July is on...");
 
-    while true {    // use while instead of loop to work with this situation, don't know why
-
+    loop {
         unsafe {
             if IS_EXIT {
+                println!("July is turn off");
+                drop(stream);
                 break;
+            } else {
+                std::thread::sleep(record_duration);
+                stream.pause().unwrap();
+                println!("July is pause");
+                std::thread::sleep(idle_duration);
+                stream.play().expect("Could not play stream");
+                println!("July is on again...");
             }
         }
-        std::thread::sleep(record_duration);
-        stream.pause().unwrap();
-        println!("July is pause");
-        std::thread::sleep(rest_duration);
-        stream.play().expect("Could not play stream");
-        println!("July is on again...");
     }
-
-    drop(stream);
 }
 
 fn recognize<T: Sample + ToSample<i16>>(
@@ -104,7 +100,6 @@ fn recognize<T: Sample + ToSample<i16>>(
         DecodingState::Finalized => {
             // println!("result: {:#?}", recognizer.final_result().single().unwrap().text);
             processing((recognizer.final_result().single().unwrap().text).parse().unwrap());
-
         }
         DecodingState::Failed => println!("error"),
     }
