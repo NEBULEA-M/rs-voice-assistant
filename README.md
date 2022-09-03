@@ -1,5 +1,10 @@
 Download model and put into directory ./model from [VOSK Model](https://alphacephei.com/vosk/models)
 
+# Text-to-speech package
+```shell
+sudo apt-get install libspeechd-dev
+```
+
 # Sound package
 ```shell
 sudo apt-get install libasound2-dev
