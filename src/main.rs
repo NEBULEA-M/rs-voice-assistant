@@ -5,7 +5,8 @@ use cpal::{
     ChannelCount, SampleFormat,
 };
 use dasp::{sample::ToSample, Sample};
-use tts::*;
+use tts::{Error, Tts};
+
 
 use july::{DecodingState, Model, Recognizer, SpeakerModel};
 
