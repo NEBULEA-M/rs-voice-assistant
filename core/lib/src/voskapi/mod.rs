@@ -3,7 +3,7 @@
 //!
 //! **Basic usage:**
 //! * Create a [`Model`]
-//! * Create a [`Recognizer`] with that model
+//! * Create a [`Recognizer`] with that vosk-model-self
 //! * Feel audio to the recognizer with [`Recognizer::accept_waveform`]
 //! * Get the processed result with [`Recognizer::result`],
 //! [`Recognizer::partial_result`] or [`Recognizer::final_result`]
@@ -15,4 +15,3 @@ pub use recognition::*;
 mod log;
 mod models;
 mod recognition;
-

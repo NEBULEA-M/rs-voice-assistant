@@ -1,10 +1,17 @@
-use std::{process, sync::{Arc, Mutex}, time::Duration};
+use std::{
+    process,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 use std::borrow::{Borrow, BorrowMut};
 use std::io::empty;
 use std::mem::take;
 use std::ptr::{NonNull, null};
 
-use cpal::{ChannelCount, SampleFormat, Stream, traits::{DeviceTrait, HostTrait, StreamTrait}};
+use cpal::{
+    ChannelCount,
+    SampleFormat, Stream, traits::{DeviceTrait, HostTrait, StreamTrait},
+};
 use dasp::{Sample, sample::ToSample};
 use tts::{Error, Tts};
 
@@ -138,7 +145,7 @@ pub trait Response {
 
 impl Response for Assistant {
     fn process_message(message: String) {
-        println!("{}", message);
+        println!("said: {}", message);
         if message.contains("take a rest july") {
             process::exit(0x0100);
         }
@@ -149,4 +156,3 @@ impl Response for Assistant {
         Ok(())
     }
 }
-

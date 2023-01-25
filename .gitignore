@@ -1,3 +1,5 @@
 /target
-/model
+/models/vosk-model-self
 core/Cargo.lock
+core/target
+core/.idea

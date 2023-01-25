@@ -45,9 +45,9 @@ pub struct Recognizer(NonNull<VoskRecognizer>);
 impl Recognizer {
     /// Creates the recognizer object. Returns [`None`] if a problem occured.
     ///
-    /// The recognizers process the speech and return text using shared model data.
+    /// The recognizers process the speech and return text using shared vosk-model-self data.
     ///
-    /// * `model` - [`Model`] containing static data for recognizer. Model can be shared
+    /// * `vosk-model-self` - [`Model`] containing static data for recognizer. Model can be shared
     /// across recognizers, even running in different threads.
     ///
     /// * `sample_rate` - The sample rate of the audio you going to feed into the recognizer.
@@ -65,14 +65,14 @@ impl Recognizer {
     /// With the speaker recognition mode the recognizer not just recognize
     /// text but also return speaker vectors one can use for speaker identification
     ///
-    /// * `model` - [`Model`] containing the data for recognizer. Model can be
+    /// * `vosk-model-self` - [`Model`] containing the data for recognizer. Model can be
     /// shared across recognizers, even running in different threads.
     ///
     /// * `sample_rate` - The sample rate of the audio you going to feed into the recognizer.
     /// Make sure this rate matches the audio content, it is a common
     /// issue causing accuracy problems.
     ///
-    /// * `spk_model` - Speaker model for speaker identification.
+    /// * `spk_model` - Speaker vosk-model-self for speaker identification.
     ///
     /// [`Model`]: crate::Model
     #[must_use]
@@ -99,7 +99,7 @@ impl Recognizer {
     /// Only recognizers with lookahead models support this type of quick configuration.
     /// Precompiled HCLG graph models are not supported.
     ///
-    /// * `model` - [`Model`] containing the data for recognizer. Model can be shared
+    /// * `vosk-model-self` - [`Model`] containing the data for recognizer. Model can be shared
     /// across recognizers, even running in different threads.
     ///
     /// * `sample_rate` - The sample rate of the audio you going to feed into the recognizer.
@@ -113,9 +113,9 @@ impl Recognizer {
     /// # use july_lib::voskapi::{Model, Recognizer};
     /// use vosk::{Model, Recognizer};
     /// #
-    /// let model = Model::new("/path/to/model").expect("Could not create a model");
+    /// let vosk-model-self = Model::new("/path/to/vosk-model-self").expect("Could not create a vosk-model-self");
     /// let recognizer = Recognizer::new_with_grammar(
-    ///     &model,
+    ///     &vosk-model-self,
     ///     16000.0,
     ///     &["one two three four five", "[unk]"],
     /// )
@@ -137,16 +137,16 @@ impl Recognizer {
                 .collect::<Vec<_>>()
                 .join(", ")
         ))
-            .ok()?;
+        .ok()?;
         let recognizer_ptr =
             unsafe { vosk_recognizer_new_grm(model.0.as_ptr(), sample_rate, grammar_c.as_ptr()) };
 
         Some(Self(NonNull::new(recognizer_ptr)?))
     }
 
-    /// Adds speaker model to already initialized recognizer
+    /// Adds speaker vosk-model-self to already initialized recognizer
     ///
-    /// Can add speaker recognition model to already created recognizer. Helps to initialize
+    /// Can add speaker recognition vosk-model-self to already created recognizer. Helps to initialize
     /// speaker recognition for grammar-based recognizer.
     pub fn set_speaker_model(&mut self, speaker_model: &SpeakerModel) {
         unsafe { vosk_recognizer_set_spk_model(self.0.as_ptr(), speaker_model.0.as_ptr()) }
@@ -258,7 +258,7 @@ impl Recognizer {
                 .to_str()
                 .unwrap(),
         )
-            .unwrap()
+        .unwrap()
     }
 
     /// Resets current results and data so the recognition can continue from scratch

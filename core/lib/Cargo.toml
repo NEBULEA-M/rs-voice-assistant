@@ -6,11 +6,11 @@ links = "libvosk"
 build = "build.rs"
 
 [target.x86_64-pc-windows-msvc.libvosk]
-rustc-link-search = ["libvosk/x86_64-windows"]
+rustc-link-search = ["../libs/libvosk/x86_64-windows"]
 rustc-link-lib = [":libvosk.lib"]
 
 [target.x86_64-unknown-linux-gnu.libvosk]
-rustc-link-search = ["libvosk/x86_64-linux"]
+rustc-link-search = ["../libs/libvosk/x86_64-linux"]
 rustc-link-lib = [":libvosk.so"]
 
 [dependencies]

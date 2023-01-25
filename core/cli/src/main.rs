@@ -13,8 +13,8 @@ use cpal::traits::StreamTrait;
 use july_common::assistant::{Assistant, Response};
 
 fn main() {
-    let model_path = "../model";
-    let speaker_model_path = "../speaker-model";
+    let model_path = "../models/vosk-model-en-us";
+    let speaker_model_path = "../models/vosk-speaker-model";
 
     let mut assistant = Assistant::new();
 
